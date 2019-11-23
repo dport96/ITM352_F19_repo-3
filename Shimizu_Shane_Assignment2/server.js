@@ -13,6 +13,32 @@ app.use(myParser.urlencoded({ extended: true }));
 fs = require('fs');
 var filename = 'user_data.json';
 
+//
+//check to see if the file exists. if it does, read it and parse it. if not output a message
+if (fs.statSync(filename)) {
+
+    //returns contents of the path
+    data = fs.readFileSync(filename, 'utf-8');
+
+    stats = fs.statSync(filename);
+    console.log(filename + ' has ' + stats.size + ' characters'); //console logs the filename with the amount of characters it has
+
+
+    users_reg_data = JSON.parse(data);//parses the data into JSON format
+    /*
+    username = 'newuser';
+    users_reg_data[username] = {}; //new user becomes new property of users_reg_data object
+    users_reg_data[username].password = 'newpass';
+    users_reg_data[username].email = 'newuser@user.com';
+
+    fs.writeFileSync(filename, JSON.stringify(users_reg_data));
+    */
+
+    console.log(users_reg_data); //console logs
+
+} else {
+    console.log(filename + ' does not exist');
+}
 //source from Lab 13
 //logs the method and path into the console
 app.all('*', function (request, response, next) {
@@ -52,10 +78,6 @@ app.post("/process_form", function (request, response) {
 
 });
 
-
-app.use(express.static('./public')); //retrieves get request and look for file in public directory
-app.listen(8080, () => console.log(`listening on port 8080`)); //the server listens on port 8080 and prints the message into the console
-
 //copied from order_page Lab 13
 //function that returns errors
 function isNonNegInt(q, returnErrors = false) {
@@ -65,55 +87,26 @@ function isNonNegInt(q, returnErrors = false) {
     if (q < 0) errors.push('Negative value!'); // Check if it is non-negative
     if (parseInt(q) != q) errors.push('Not an integer!'); // Check that it is an integer
     return returnErrors ? errors : (errors.length == 0); //return errors if there are errors 
-
 }
-//
-//check to see if the file exists. if it does, read it and parse it. if not output a message
-if (fs.statSync(filename)) {
-
-    //returns contents of the path
-    data = fs.readFileSync(filename, 'utf-8');
-
-    stats = fs.statSync(filename);
-    console.log(filename + ' has ' + stats.size + ' characters'); //console logs the filename with the amount of characters it has
-
-
-    users_reg_data = JSON.parse(data);//parses the data into JSON format
-    /*
-    username = 'newuser';
-    users_reg_data[username] = {}; //new user becomes new property of users_reg_data object
-    users_reg_data[username].password = 'newpass';
-    users_reg_data[username].email = 'newuser@user.com';
-
-    fs.writeFileSync(filename, JSON.stringify(users_reg_data));
-    */
-
-    console.log(users_reg_data); //console logs
-
-} else {
-    console.log(filename + ' does not exist');
-}
-
 
 //gets called with data from the form
-app.post("/login", function (request, response) {
+app.post("/logon", function (request, response) {
     // Process login form POST and redirect to logged in page if ok, back to login page if not
     console.log(request.body);
+    qString = querystring.stringify(request.query); //string query together
     the_username = request.body.username; //give me username from object and assigning it
     if (typeof users_reg_data[the_username] != 'undefined') { //ask object if it has property called username, if it does, it wont be udefined. check to see if it exists
         if (users_reg_data[the_username].password == request.body.password) {//check if the password they entered matches what was stored
             //passes the username + the string logged in on the page to greet them
             response.redirect("./invoice.html?" + qString);//if the quantity is valid, user is directed to invoice along with the query data from the form
         } else if (users_reg_data[the_username].password != request.body.password) {
-            response.send('password incorrect');//if they did not login successfully, does another get request and redirects user to login to page
+            //response.send('password incorrect');//if they did not login successfully, does another get request and redirects user to login to page
+            response.redirect("./login.html?" + qString); // bad password so send back login
         }
     } else {
         response.redirect('/register?' + qString);//if they did not login successfully, does another get request and redirects user to login to page
         //can regnerate form here and display errors
     }
-
-
-
 });
 
 app.get("/register", function (request, response) { //if server gets request to register
@@ -161,4 +154,5 @@ app.post("/register", function (request, response) {
 
 });
 
-
+app.use(express.static('./public')); //retrieves get request and look for file in public directory
+app.listen(8080, () => console.log(`listening on port 8080`)); //the server listens on port 8080 and prints the message into the console
